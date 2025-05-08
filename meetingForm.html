@@ -409,37 +409,8 @@
     </div>    
 
     <div class="input-container">
-      <button id="saveMeeting" class="button">Сохранить встречу</button>
+      <button id="saveMeeting" class="button">Сохранить</button>
     </div>
-
-    <!-- <div class="input-container">
-      <div class="input-container">
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-      </div>
-    </div>
-    
-    <div class="input-container">
-      <div class="input-container">
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-        <label class="input-label">    </label>
-      </div>
-    </div>
-
-    <div class="input-container">
-      <div class="input-container">
-        <label class="input-label">__________________________________________________________________________________________</label>
-        <div class="import-section">
-          <button id="importFromCalendar" class="button button-dev" >Выбрать из календаря</button>
-          <!-- <button id="importByLink" class="button button-dev" >Загрузить по ссылке</button> -->
-        <!-- </div>
-      </div>
-    </div> --> 
 
   </div>
 
@@ -935,9 +906,11 @@
                 if (response && response.invalidEmails && response.invalidEmails.length > 0) {
                   showAlert(`Встреча сохранена, но не найдены: ${response.invalidEmails.join(', ')}`, false); // false = не закрывать автоматически
                 }
-                setTimeout(function() {
-                  google.script.host.close();
-                }, 500);
+                // Вместо закрытия окна теперь открываем окно записей
+                google.script.run.showRecordDialog(response.id, response.number);                
+                // setTimeout(function() {
+                //   google.script.host.close();
+                // }, 500);
               })
               .withFailureHandler(function(error) {
                 showAlert("Ошибка: " + error.message);
@@ -945,7 +918,8 @@
                 btn.textContent = 'Сохранить встречу';
                 isSaving = false;
               })
-              .createMeeting(meetingData);
+              .showMeetingAndRecordDialog(meetingData);                 
+              // .createMeeting(meetingData);
           } catch (error) {
             showAlert(error.message);
             btn.disabled = false;

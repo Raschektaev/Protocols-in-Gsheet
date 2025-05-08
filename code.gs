@@ -1,3 +1,5 @@
+// code.gs
+
 var employeeCache = null;
 const CACHE_EXPIRATION = 5 * 60; // 5 минут
 

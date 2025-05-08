@@ -41,3 +41,29 @@ function showMeetingTypeSelector() {
     .setHeight(450);
   SpreadsheetApp.getUi().showModalDialog(html, 'Создание встречи');
 }
+
+function showMeetingAndRecordDialog(meetingData) {
+  try {
+    // Создаем встречу
+    const meetingResult = createMeeting(meetingData);
+    
+    // Если встреча успешно создана, открываем окно записей
+    if (meetingResult && meetingResult.success) {
+      showRecordDialog(meetingResult.id, meetingResult.number);
+    }
+    
+    return meetingResult;
+  } catch (e) {
+    console.error("Ошибка в showMeetingAndRecordDialog:", e);
+    throw e;
+  }
+}  
+
+function showRecordDialogWithoutMeeting() {
+  var html = HtmlService.createHtmlOutputFromFile('recordForm')
+    .setTitle('Новая запись') // Добавляем явный заголовок
+    .setWidth(800)
+    .setHeight(650);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Создание записи');
+  PropertiesService.getScriptProperties().setProperty('currentMeetingId', '');
+}

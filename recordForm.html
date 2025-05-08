@@ -1,3 +1,4 @@
+<!-- recordForm -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -276,10 +277,13 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       var isInitialized = false;
-
+      
       // Устанавливаем заголовок
-      const protocolNumber = document.title.match(/\d+/)[0]; // Извлекаем номер из title
-      document.getElementById('meetingTitle').textContent = `Протокол №${protocolNumber}`;
+      const protocolNumberMatch = document.title.match(/\d+/);
+      const protocolNumber = protocolNumberMatch ? protocolNumberMatch[0] : '';
+      document.getElementById('meetingTitle').textContent = `Протокол ${protocolNumber ? '№' + protocolNumber : ''}`;
+      // const protocolNumber = document.title.match(/\d+/)[0]; // Извлекаем номер из title
+      // document.getElementById('meetingTitle').textContent = `Протокол №${protocolNumber}`;
 
       // Сначала загружаем сотрудников
       loadEmployees().then(() => {
