@@ -11,10 +11,17 @@ function onOpen() {
 }
 
 function showMeetingDialog() {
-  var html = HtmlService.createHtmlOutputFromFile('meetingForm')
-    .setWidth(600)
-    .setHeight(650);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Новая встреча');
+  try {
+    const html = HtmlService.createHtmlOutputFromFile('meetingForm')
+      .setWidth(600)
+      .setHeight(650)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    
+    SpreadsheetApp.getUi().showModalDialog(html, 'Новая встреча');
+  } catch (e) {
+    console.error('Ошибка открытия диалога:', e);
+    throw e;
+  }
 }
 
 function showRecordDialog(meetingId, meetingNumber) {

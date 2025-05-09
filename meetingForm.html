@@ -294,6 +294,7 @@
       font-size: 14px;
       cursor: pointer;
       transition: background-color 0.3s;
+      margin-top: 15px;
     }
 
     .custom-alert-button:hover {
@@ -351,6 +352,27 @@
       background: rgba(0,0,0,0.5);
       z-index: 1000;
     }
+    .custom-alert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .custom-alert-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      text-align: center;
+    }
+
   </style>
 </head>
 <body>
@@ -359,7 +381,6 @@
     <div class="spinner"></div>
     <div>Загрузка данных...</div>
   </div>
-
 
   <div id="formContainer" style="display: none;">
 
@@ -409,13 +430,96 @@
     </div>    
 
     <div class="input-container">
-      <button id="saveMeeting" class="button">Сохранить</button>
+      <button id="saveMeeting" class="button" type="button">Сохранить</button>
     </div>
 
   </div>
 
   <script>
+    function handleSaveMeeting(event) {
+      event.preventDefault();
+      const btn = event.target;
+      const originalText = btn.textContent;
+      
+      // Блокируем кнопку на время обработки
+      btn.disabled = true;
+      btn.textContent = 'Сохранение...';
+
+      try {
+        // 1. Сбор данных формы
+        const meetingData = {
+          date: document.getElementById('meetingDateTime').value,
+          topic: document.getElementById('topic').value.trim(),
+          attendees: Array.from(window.selectedEmails || new Set()),
+          meetingNumber: window.currentMeetingNumber || ''
+        };
+
+        // 2. Валидация данных
+        const errors = [];
+        if (!meetingData.date) errors.push('Укажите дату встречи');
+        if (!meetingData.topic) errors.push('Введите тему встречи');
+        if (meetingData.attendees.length === 0) errors.push('Добавьте участников');
+        
+        if (errors.length > 0) {
+          throw new Error(errors.join('\n'));
+        }
+
+        // 3. Отправка данных на сервер
+        google.script.run
+          .withSuccessHandler(response => {
+            if (response.invalidEmails?.length > 0) {
+              showAlert(`Встреча сохранена, но не найдены: ${response.invalidEmails.join(', ')}`, false);
+            } else {
+              google.script.host.close();
+            }
+          })          
+          .withFailureHandler(error => {
+            showAlert(`Ошибка: ${error.message}`);
+            btn.disabled = false;
+            btn.textContent = originalText;
+          })
+          .createMeeting(meetingData);
+
+      } catch (error) {
+        // Обработка ошибок валидации
+        showAlert(error.message);
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    // // Вспомогательная функция показа уведомлений
+    // function showAlert(message, autoClose = true) {
+    //   const alertDiv = document.createElement('div');
+    //   alertDiv.className = 'custom-alert';
+    //   alertDiv.innerHTML = `
+    //     <div class="custom-alert-content">
+    //       <div class="custom-alert-message">${message}</div>
+    //       <button class="custom-alert-button" onclick="this.parentElement.parentElement.remove()">OK</button>
+    //     </div>
+    //   `;
+    //   document.body.appendChild(alertDiv);
+
+    //   if (autoClose) {
+    //     setTimeout(() => alertDiv.remove(), 5000);
+    //   }
+    // }
+
     document.addEventListener('DOMContentLoaded', function() {
+      // Проверка существования элементов
+      const saveButton = document.getElementById('saveMeeting');
+      if (saveButton) {
+        saveButton.addEventListener('click', handleSaveMeeting);
+      } else {
+        console.error('Элемент #saveMeeting не найден');
+      }
+      // Динамическое создание элементов
+      document.body.addEventListener('click', function(event) {
+        if (event.target.matches('#saveMeeting')) {
+          handleSaveMeeting(event);
+        }
+      });
+
       Promise.all([
           loadMeetingNumber(),
           loadEmployees()
@@ -451,6 +555,31 @@
           initializeSaveButton();
         }
       }, 100);
+
+      function showAlert(message, autoClose = true) {
+        const alert = document.getElementById('customAlert');
+        const messageEl = document.getElementById('customAlertMessage');
+        const okButton = document.getElementById('customAlertOK');
+        
+        if (!alert || !messageEl || !okButton) return;
+        
+        messageEl.textContent = message;
+        alert.style.display = 'flex';
+        
+        okButton.onclick = function() {
+          alert.style.display = 'none';
+          if (autoClose) {
+            google.script.host.close();
+          }
+        };
+        
+        if (autoClose) {
+          setTimeout(() => {
+            alert.style.display = 'none';
+            google.script.host.close();
+          }, 3000);
+        }
+      }
 
       // Добавьте функцию для загрузки данных
       function loadSelectedEventData() {
@@ -775,22 +904,26 @@
         const messageEl = document.getElementById('customAlertMessage');
         const okButton = document.getElementById('customAlertOK');
         
-        if (!alert || !messageEl || !okButton) return;
+        if (!alert || !messageEl || !okButton) {
+          console.error('Не найдены элементы алерта');
+          return;
+        }
         
+        // Обновляем текст сообщения
         messageEl.textContent = message;
+        
+        // Показываем алерт
         alert.style.display = 'flex';
         
+        // Обработчик для кнопки OK
         okButton.onclick = function() {
           alert.style.display = 'none';
-          if (autoClose) {
-            google.script.host.close();
-          }
         };
-        
+
+        // Автозакрытие только для информационных сообщений
         if (autoClose) {
           setTimeout(() => {
             alert.style.display = 'none';
-            google.script.host.close();
           }, 3000);
         }
       }
@@ -961,7 +1094,7 @@
     
   </script>
 
-  <div id="customAlert" class="custom-alert">
+  <div id="customAlert" class="custom-alert" style="display: none;">
     <div class="custom-alert-content">
       <div class="custom-alert-message" id="customAlertMessage"></div>
       <button class="custom-alert-button" id="customAlertOK">OK</button>
